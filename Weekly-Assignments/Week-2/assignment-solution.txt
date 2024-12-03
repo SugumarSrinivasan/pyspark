@@ -1,0 +1,123 @@
+Login to your Gateway node & open a terminal
+
+    1. Hit the following URL: https://labs.itversity.com/ in your favorite web browser
+    2. Click on Login and enter your username and password
+        username: sugumarsks@gmail.com
+        password: Sugu@21031996
+    3. Click on console link under Action, this will open the jupyter hub in the new tab in your browser
+    4. Navigate to following path: File >> New >> Terminal
+
+write a command to know what's your home directory in gateway node
+
+[itv011877@g01 ~]$ pwd
+/home/itv011877
+
+There is a third party service which will drop a file named orders.csv in the landing folder 
+under your home directory. Then you need to filter for all the orders where status is PENDING_PAYMENT 
+& create a new file named orders_filtered.csv and put it to the staging folder.
+Then take this file and put it to hdfs in landing folder in your hdfs and do a couple of more things...
+So to simulate this..
+
+create two folders named landing and staging in your home directory.
+
+[itv011877@g01 ~]$ mkdir landing staging
+[itv011877@g01 ~]$ 
+
+copy the file present under /data/retail_db/orders folder to the landing folder in your home directory.
+
+[itv011877@g01 ~]$ cp /data/retail_db/orders/part-00000 landing/
+[itv011877@g01 ~]$ 
+
+Apply the grep command to filter for all orders with PENDING_PAYMENT status and create a new file 
+named orders_filtered.csv under your staging folder with the filtered results.
+
+[itv011877@g01 ~]$ grep "PENDING_PAYMENT" landing/part-00000 >> staging/orders_filtered.csv
+[itv011877@g01 ~]$ 
+
+create a folder hierarchy in your hdfs home named data/landing
+[itv011877@g01 ~]$ hdfs dfs -mkdir -p data/landing
+[itv011877@g01 ~]$
+
+copy this orders_filtered.csv file from your staging folder in local to data/landing folder in your hdfs.
+
+[itv011877@g01 ~]$ hdfs dfs -copyFromLocal staging/orders_filtered.csv /user/itv011877/data/landing/
+[itv011877@g01 ~]$ 
+
+Run a command to check number of records in orders_filtered.csv file under data/landing folder
+
+[itv011877@g01 ~]$ hdfs dfs -cat /user/itv011877/data/landing/orders_filtered.csv | wc -l
+15030
+[itv011877@g01 ~]$ 
+
+Write a command to list the files in the data/landing folder of hdfs.
+
+[itv011877@g01 ~]$ hdfs dfs -ls data/landing
+Found 1 items
+-rw-r--r--   3 itv011877 supergroup     735626 2024-03-18 00:43 data/landing/orders_filtered.csv
+[itv011877@g01 ~]$ 
+
+reframe this command so that you can see the file size in kb's
+
+[itv011877@g01 ~]$ hdfs dfs -ls -h data/landing
+Found 1 items
+-rw-r--r--   3 itv011877 supergroup    718.4 K 2024-03-18 00:43 data/landing/orders_filtered.csv
+[itv011877@g01 ~]$ 
+
+change the permission of this file 
+give read, write and execute to the owner 
+read and write to the group 
+read to others
+
+[itv011877@g01 ~]$ hdfs dfs -chmod 764 data/landing/orders_filtered.csv
+[itv011877@g01 ~]$ 
+
+create a new folder data/staging in your hdfs and move orders_filtered.csv from data/landing to data/staging
+
+[itv011877@g01 ~]$ hdfs dfs -mv data/landing/orders_filtered.csv data/staging/
+[itv011877@g01 ~]$
+
+Now let's assume a spark program would have run on your staging folder to
+do some processing and let's say the processed results gives you just 2 lines as 
+ouput 
+3617,2013-08-1500:00:00.0,8889,PENDING_PAYMENT
+68714,2013-09-0600:00:00.0,8889,PENDING_PAYMENT
+
+To simulate this, create a new file called orders_result.csv in the home directory 
+of your local gateway node using vi editor and have the above 2 records.
+
+[itv011877@g01 ~]$ vi orders_result.csv
+[itv011877@g01 ~]$ 
+
+move orders_result.csv from local to hdfs under a new directory called
+data/results(thing as if spark program has run and has created this file)
+
+[itv011877@g01 ~]$ hdfs dfs -mkdir data/results
+[itv011877@g01 ~]$ 
+[itv011877@g01 ~]$ hdfs dfs -copyFromLocal orders_result.csv /user/itv011877/data/results/
+[itv011877@g01 ~]$
+
+Now the processed results we want to bring back to local under a folder 
+data/results in your local. so run a command to bring the file from hdfs to local.
+
+[itv011877@g01 ~]$ mkdir -p data/results
+[itv011877@g01 ~]$ 
+[itv011877@g01 ~]$ hdfs dfs -copyToLocal /user/itv011877/data/results/orders_result.csv data/results/
+[itv011877@g01 ~]$ 
+
+rename the file orders_result.csv under data/results folder in your local to final_results.csv
+
+[itv011877@g01 ~]$ mv data/results/orders_result.csv data/results/final_results.csv
+[itv011877@g01 ~]$ 
+
+Now we are done.. so delete all the directories that you have created in your
+local as well as hdfs.
+
+[itv011877@g01 ~]$ rm -rf landing staging orders_result.csv 
+[itv011877@g01 ~]$
+[itv011877@g01 ~]$ hdfs dfs -rm -R data
+2024-03-18 01:06:21,657 INFO fs.TrashPolicyDefault: Moved: 'hdfs://m01.itversity.com:9000/user/itv011877/data' to trash at: hdfs://m01.itversity.com:9000/user/itv011877/.Trash/Current/user/itv011877/data
+[itv011877@g01 ~]$ 
+[itv011877@g01 ~]$ hdfs dfs -rm -R output
+2024-03-18 01:07:13,505 INFO fs.TrashPolicyDefault: Moved: 'hdfs://m01.itversity.com:9000/user/itv011877/output' to trash at: hdfs://m01.itversity.com:9000/user/itv011877/.Trash/Current/user/itv011877/output
+[itv011877@g01 ~]$ 
+
