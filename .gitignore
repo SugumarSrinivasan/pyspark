@@ -10,4 +10,4 @@
 
 # Ignore deby.log and metastore_db
 derby.log
-metastore_db/*
+metastore_db
